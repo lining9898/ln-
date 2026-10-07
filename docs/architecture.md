@@ -109,3 +109,18 @@ BATCH 5 迁移 SQLite 时保留 knowledge_base_id、名称、时间戳和 schema
 随后将副本移到最终路径、原子更新文档 JSON；写入失败回读记录，确认没有提交才删副本。
 若回读也失败则保留副本并提示状态不确定，避免删掉已记录的文件。
 非正常断电仍可能留下未入库副本或暂存文件，留待后续恢复机制处理；不宣称断电零孤儿文件。
+
+## BATCH 4 已实现的解析与来源约定
+
+Core 的 IDocumentParser、IParsedContentRepository、IDocumentParsingService 保持业务层不依赖 JSON。
+四种 Parser 独立实现；解析单元携带 document_id、knowledge_base_id、sequence、text、source_type、parser_type、created_at。
+PDF 使用物理页 page_number（从 1 开始），TXT/Markdown 使用 start_line/end_line，DOCX 使用 paragraph_number 和标题层级路径。没有把 DOCX 段落序号伪装成行号。
+
+`documents.json` 从 schema_version 1 向 2 兼容读取，首次写入迁移；文档元数据和 parsed_documents 在同一版本化快照中提交。
+解析状态 PENDING→PARSING→COMPLETED/PARTIAL/FAILED；重试替换同 document_id 的旧解析单元。
+启动时将遗留 PARSING 标为 FAILED 并清除旧单元，避免旧来源冒充本次结果。
+已完成但缺少来源、PDF 物理页越界、跨知识库关联或来源类型不合理时拒绝读取。
+
+PDF 文本由 PdfPig 提取；仅无可用文本且含嵌入图像的页进入本地 OCR。
+OCR 使用 pdftoppm 渲染该物理页，Tesseract chi_sim+eng 识别；结果标为 OCR，失败页进入 ParseFailure。
+OCR 识别字词仍需人工核对。Windows 原生工具和语言包的发行集成属于 BATCH 15，实机验证仍受阻。

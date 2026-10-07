@@ -4,6 +4,9 @@ using AiKnowledgeAssistant.Desktop.ViewModels;
 using AiKnowledgeAssistant.Desktop.UI;
 using AiKnowledgeAssistant.Infrastructure.Storage;
 using AiKnowledgeAssistant.Infrastructure.Documents;
+using AiKnowledgeAssistant.Infrastructure.Parser;
+using AiKnowledgeAssistant.Infrastructure.OCR;
+using AiKnowledgeAssistant.Core.Documents;
 
 namespace AiKnowledgeAssistant.Desktop;
 
@@ -19,8 +22,15 @@ public partial class App : Application
             var window = new MainWindow();
             var knowledgeBaseStore = new JsonKnowledgeBaseStore(paths);
             var documentRepository = new JsonDocumentRepository(paths);
+            documentRepository.RecoverInterruptedParsing();
+            var parsers = new IDocumentParser[] {
+                new PdfDocumentParser(new TesseractPdfPageOcr()),
+                new DocxDocumentParser(), new TextDocumentParser(), new MarkdownDocumentParser()
+            };
+            var parsing = new DocumentParsingService(documentRepository, documentRepository, parsers);
             var documents = new DocumentsViewModel(documentRepository,
-                new DocumentImportService(knowledgeBaseStore, documentRepository, paths));
+                new DocumentImportService(knowledgeBaseStore, documentRepository, paths),
+                parsing, documentRepository);
             var knowledgeBases = new KnowledgeBasesViewModel(knowledgeBaseStore,
                 new KnowledgeBaseDialogs(window)) { Documents = documents };
             window.DataContext = new MainViewModel(paths, knowledgeBases, documents);
@@ -28,7 +38,7 @@ public partial class App : Application
             window.Show();
             knowledgeBases.Refresh();
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException)
         {
             // Do not expose exception text, user paths or private content in logs.
             MessageBox.Show("无法创建本地数据目录。请检查当前用户的磁盘空间与目录访问权限，然后重新打开软件。",

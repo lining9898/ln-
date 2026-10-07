@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace AiKnowledgeAssistant.Core.Documents;
 
-public enum ProcessingStatus { Pending }
+public enum ProcessingStatus { Pending, Parsing, Completed, Partial, Failed }
 
 public sealed record Document(
     [property: JsonPropertyName("document_id")] Guid Id,
@@ -15,4 +15,6 @@ public sealed record Document(
     [property: JsonPropertyName("updated_at")] DateTimeOffset UpdatedAt,
     [property: JsonPropertyName("parse_status")] ProcessingStatus ParseStatus,
     [property: JsonPropertyName("index_status")] ProcessingStatus IndexStatus,
-    [property: JsonPropertyName("content_hash")] string ContentHash);
+    [property: JsonPropertyName("content_hash")] string ContentHash,
+    [property: JsonPropertyName("parse_error")] string? ParseError = null,
+    [property: JsonPropertyName("total_pages")] int? TotalPages = null);

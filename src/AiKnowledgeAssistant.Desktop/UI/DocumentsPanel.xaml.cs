@@ -23,6 +23,12 @@ public partial class DocumentsPanel : UserControl
             await model.ImportFilesAsync(dialog.FileNames);
     }
 
+    private async void ReparseClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DocumentsViewModel model)
+            await model.ParseSelectedAsync();
+    }
+
     private void FilesDragOver(object sender, DragEventArgs e)
     {
         e.Effects = DataContext is DocumentsViewModel { CanImport: true } &&

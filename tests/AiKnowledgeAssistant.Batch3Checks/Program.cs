@@ -228,6 +228,7 @@ sealed class BlockingTransfer : IFileTransfer
 sealed class FailingRepository(IDocumentRepository inner, bool commitFirst) : IDocumentRepository
 {
     public IReadOnlyList<Document> List(Guid id) => inner.List(id);
+    public Document? Get(Guid id) => inner.Get(id);
     public bool HasDocuments(Guid id) => inner.HasDocuments(id);
     public void Add(Document document)
     {

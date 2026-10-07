@@ -12,8 +12,10 @@
                 <TextBlock Text="支持 PDF、DOCX、TXT、MD；也可将文件拖到此区域。"
                     VerticalAlignment="Center" Foreground="#596779" />
             </WrapPanel>
-            <TextBlock Text="文件会复制到本机的受管理目录；当前尚未解析或建立索引。"
+            <TextBlock Text="文件复制到本机后自动解析；检索索引将在后续批次建立。"
                 Foreground="#596779" Margin="0,0,0,12" />
+            <Button Content="解析 / 重新解析" Click="ReparseClick"
+                IsEnabled="{Binding CanParse}" HorizontalAlignment="Left" Margin="0,0,0,12" />
             <TextBlock Text="{Binding ImportSummary}" Margin="0,0,0,8" />
             <ItemsControl ItemsSource="{Binding ImportResults}" Margin="0,0,0,12" />
             <TextBlock Text="请先选择知识库。" Margin="0,0,0,12">
@@ -28,7 +30,8 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <ListView ItemsSource="{Binding Items}" MinHeight="100" MaxHeight="320"
+            <ListView ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedDocument, Mode=TwoWay}"
+                MinHeight="100" MaxHeight="280"
                 AutomationProperties.Name="当前知识库文件列表">
                 <ListView.View>
                     <GridView>
@@ -38,6 +41,19 @@
                         <GridViewColumn Header="导入时间" DisplayMemberBinding="{Binding ImportedAt}" Width="135" />
                         <GridViewColumn Header="解析状态" DisplayMemberBinding="{Binding ParseStatus}" Width="80" />
                         <GridViewColumn Header="索引状态" DisplayMemberBinding="{Binding IndexStatus}" Width="80" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <TextBlock Text="{Binding SelectedDocument.ParseError}" Foreground="#B42318" Margin="0,8,0,0" />
+            <ItemsControl ItemsSource="{Binding ParseFailures}" Margin="0,4,0,8" />
+            <TextBlock Text="解析来源（点击文件后显示）" FontWeight="SemiBold" Margin="0,10,0,8" />
+            <ListView ItemsSource="{Binding ParsedUnits}" MaxHeight="250"
+                AutomationProperties.Name="解析文本及来源">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="来源位置" DisplayMemberBinding="{Binding Position}" Width="180" />
+                        <GridViewColumn Header="来源类型" DisplayMemberBinding="{Binding Source}" Width="110" />
+                        <GridViewColumn Header="提取内容" DisplayMemberBinding="{Binding Preview}" Width="360" />
                     </GridView>
                 </ListView.View>
             </ListView>
