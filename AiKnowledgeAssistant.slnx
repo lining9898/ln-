@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/AiKnowledgeAssistant.Core/AiKnowledgeAssistant.Core.csproj" />
+  <Project Path="src/AiKnowledgeAssistant.Infrastructure/AiKnowledgeAssistant.Infrastructure.csproj" />
+  <Project Path="src/AiKnowledgeAssistant.Desktop/AiKnowledgeAssistant.Desktop.csproj" />
+</Solution>

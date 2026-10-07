@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../AiKnowledgeAssistant.Core/AiKnowledgeAssistant.Core.csproj" />
+  </ItemGroup>
+</Project>
