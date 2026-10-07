@@ -19,8 +19,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+    public KnowledgeBasesViewModel? KnowledgeBases { get; }
     public string DataRoot { get; }
-    public MainViewModel(IUserDataPaths paths) => DataRoot = paths.Root;
+    public MainViewModel(IUserDataPaths paths, KnowledgeBasesViewModel? knowledgeBases = null)
+    {
+        DataRoot = paths.Root;
+        KnowledgeBases = knowledgeBases;
+    }
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

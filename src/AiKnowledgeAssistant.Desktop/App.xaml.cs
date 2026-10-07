@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using AiKnowledgeAssistant.Desktop.ViewModels;
+using AiKnowledgeAssistant.Desktop.UI;
 using AiKnowledgeAssistant.Infrastructure.Storage;
 
 namespace AiKnowledgeAssistant.Desktop;
@@ -14,9 +15,13 @@ public partial class App : Application
         {
             var paths = UserDataPaths.ForCurrentUser();
             paths.EnsureDirectories();
-            var window = new MainWindow { DataContext = new MainViewModel(paths) };
+            var window = new MainWindow();
+            var knowledgeBases = new KnowledgeBasesViewModel(new JsonKnowledgeBaseStore(paths),
+                new KnowledgeBaseDialogs(window));
+            window.DataContext = new MainViewModel(paths, knowledgeBases);
             MainWindow = window;
             window.Show();
+            knowledgeBases.Refresh();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {

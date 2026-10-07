@@ -83,3 +83,13 @@ DOCX 可打开受管理原文件并预览提取文本；TXT/MD 本地文本预�
 第三方依赖在对应批次锁版本、记录许可证；代码签名取决于可用证书，无证书不得宣称已签名。
 Windows 真实验收覆盖无开发运行时、中文用户名/路径、空格路径、重启、离线、安装升级/卸载保留数据。
 当前 Linux 环境不能证明 WPF 可运行或 Windows 安装成功。
+
+## BATCH 2 已实现的持久化约定
+
+databases/knowledge-bases.json 保存 schema_version=1 和 knowledge_bases 列表。
+每库 knowledge_base_id 为非空 GUID；名称不参与路径生成。名称使用 NFC、首尾 Trim、最多 80 个 Unicode 标量，不区分大小写去重，中间空格保留。
+每次操作读取最新快照，使用独占文件锁防止其他实例同时改写；锁冲突提示重试。
+写入同目录临时文件、Flush(true) 后替换；读到损坏/未知版本数据时拒绝操作，不创建空快照覆盖。
+BATCH 2 删除仅移除匹配 ID 的元数据，不递归删除目录。未来文档关联及清理需在导入批次独立实现并测试。
+BATCH 5 迁移 SQLite 时保留 knowledge_base_id、名称、时间戳和 schema 版本信息，校验后才切换。
+文件锁/原子替换的 Windows 行为和断电恢复能力尚未实机验证；不能据 Linux 测试承诺断电零丢失。

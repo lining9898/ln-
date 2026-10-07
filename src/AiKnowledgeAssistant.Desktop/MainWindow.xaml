@@ -40,7 +40,7 @@
                     <TextBlock Text="AI问答" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="选择知识库" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <Border Background="#EDF2F7" Padding="16" CornerRadius="6">
-                        <TextBlock Text="暂无知识库。知识库管理功能将在后续批次提供。" />
+                        <TextBlock Text="请先在“知识库”页面新建知识库。本页选择与问答将在后续批次提供。" />
                     </Border>
                     <Border BorderBrush="#D9E1EA" BorderThickness="1" CornerRadius="6" Padding="24" Margin="0,20,0,16" MinHeight="230">
                         <StackPanel VerticalAlignment="Center">
@@ -69,17 +69,46 @@
                         </Style>
                     </StackPanel.Style>
                     <TextBlock Text="知识库" Style="{StaticResource PageTitle}" />
-                    <DockPanel Margin="0,0,0,20">
-                        <Button DockPanel.Dock="Right" Content="＋ 新建知识库" IsEnabled="False" />
-                        <TextBlock Text="我的知识库" FontSize="18" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Background="#EDF2F7" Padding="24" CornerRadius="6">
-                        <StackPanel>
-                            <TextBlock Text="还没有知识库" FontSize="20" />
-                            <TextBlock Text="可按公司资料、项目文件、产品手册或个人学习资料分别管理。" Margin="0,12,0,0" />
-                            <TextBlock Text="新建、重命名和删除功能将在下一批次提供。" Margin="0,8,0,0" />
-                        </StackPanel>
-                    </Border>
+                    <StackPanel DataContext="{Binding KnowledgeBases}">
+                        <WrapPanel Margin="0,0,0,16">
+                            <Button Content="＋ 新建知识库" Command="{Binding CreateCommand}" Margin="0,0,12,8" />
+                            <Button Content="重命名" Command="{Binding RenameCommand}" Margin="0,0,12,8" />
+                            <Button Content="删除" Command="{Binding DeleteCommand}" Margin="0,0,12,8" />
+                            <Button Content="刷新" Command="{Binding RefreshCommand}" Margin="0,0,0,8" />
+                        </WrapPanel>
+                        <TextBlock Text="我的知识库" FontSize="18" Margin="0,0,0,8" />
+                        <TextBlock Text="{Binding Summary}" Foreground="#596779" Margin="0,0,0,12" />
+                        <Border Background="#EDF2F7" Padding="24" CornerRadius="6">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasItems}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock Text="还没有知识库" FontSize="20" />
+                                <TextBlock Text="点击“新建知识库”，按公司资料、项目文件或个人资料分别管理。" Margin="0,12,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                            BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch"
+                            AutomationProperties.Name="知识库列表">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#D9E1EA" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold" />
+                                            <TextBlock Text="尚未导入文件" Foreground="#596779" Margin="0,8,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel>
                     <StackPanel.Style>
