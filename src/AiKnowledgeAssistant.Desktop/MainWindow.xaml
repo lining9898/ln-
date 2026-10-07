@@ -1,0 +1,144 @@
+<Window x:Class="AiKnowledgeAssistant.Desktop.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="AI 知识库助手" Width="1120" Height="760" MinWidth="800" MinHeight="600"
+    WindowStartupLocation="CenterScreen" FontFamily="Microsoft YaHei UI" FontSize="14"
+    Language="zh-CN" Background="#F5F7FA">
+    <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="192" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <Border Background="#FFFFFF" BorderBrush="#D9E1EA" BorderThickness="0,0,1,0">
+            <DockPanel Margin="16,24">
+                <TextBlock DockPanel.Dock="Top" Text="AI 知识库助手" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,28" />
+                <TextBlock DockPanel.Dock="Bottom" Text="本地资料 · 有据可查" FontSize="12" Foreground="#596779" Margin="0,20,0,0" />
+                <ListBox ItemsSource="{Binding NavigationItems}" SelectedItem="{Binding SelectedPage, Mode=TwoWay}"
+                    BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch"
+                    AutomationProperties.Name="主导航">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="12,14" />
+                            <Setter Property="Margin" Value="0,0,0,6" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </DockPanel>
+        </Border>
+        <Grid Grid.Column="1" Margin="32,24">
+            <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Grid Margin="0,0,12,0">
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel" BasedOn="{StaticResource PagePanel}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedPage}" Value="AI问答">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="AI问答" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="选择知识库" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <Border Background="#EDF2F7" Padding="16" CornerRadius="6">
+                        <TextBlock Text="暂无知识库。知识库管理功能将在后续批次提供。" />
+                    </Border>
+                    <Border BorderBrush="#D9E1EA" BorderThickness="1" CornerRadius="6" Padding="24" Margin="0,20,0,16" MinHeight="230">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="向你的资料提问" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="导入资料后，可根据知识库内容获取答案并查看引用来源。" Margin="0,12,0,0" />
+                            <TextBlock Text="当前尚未接入 AI；本页暂不生成回答。" Margin="0,8,0,0" Foreground="#596779" />
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="请输入你的问题……" Margin="0,0,0,8" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBox IsEnabled="False" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap"
+                            AutomationProperties.Name="问题输入框，暂未开放" />
+                        <Button Grid.Column="1" Content="发送" IsEnabled="False" Margin="12,0,0,0" VerticalAlignment="Bottom" />
+                    </Grid>
+                    <TextBlock Text="未配置 API Key 时，后续本地搜索功能仍可使用。" Margin="0,12,0,0" Foreground="#596779" />
+                </StackPanel>
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel" BasedOn="{StaticResource PagePanel}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedPage}" Value="知识库">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="知识库" Style="{StaticResource PageTitle}" />
+                    <DockPanel Margin="0,0,0,20">
+                        <Button DockPanel.Dock="Right" Content="＋ 新建知识库" IsEnabled="False" />
+                        <TextBlock Text="我的知识库" FontSize="18" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Background="#EDF2F7" Padding="24" CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock Text="还没有知识库" FontSize="20" />
+                            <TextBlock Text="可按公司资料、项目文件、产品手册或个人学习资料分别管理。" Margin="0,12,0,0" />
+                            <TextBlock Text="新建、重命名和删除功能将在下一批次提供。" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel" BasedOn="{StaticResource PagePanel}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedPage}" Value="文档搜索">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="文档搜索" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="搜索当前选择的知识库资料" Margin="0,0,0,12" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBox IsEnabled="False" MinHeight="36" AutomationProperties.Name="文档搜索词，暂未开放" />
+                        <Button Grid.Column="1" Content="搜索" IsEnabled="False" Margin="12,0,0,0" />
+                    </Grid>
+                    <TextBlock Text="暂无可搜索的资料。导入与检索功能将在后续批次提供。" Margin="0,24,0,0" />
+                </StackPanel>
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel" BasedOn="{StaticResource PagePanel}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedPage}" Value="文件管理">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="文件管理" Style="{StaticResource PageTitle}" />
+                    <Button Content="添加资料" IsEnabled="False" HorizontalAlignment="Left" Margin="0,0,0,20" />
+                    <TextBlock Text="暂无文件" FontSize="20" />
+                    <TextBlock Text="后续支持 PDF、DOCX、TXT 和 Markdown，显示文件类型、大小、解析与索引状态。" Margin="0,12,0,0" />
+                    <TextBlock Text="当前尚未开放文件选择或拖拽导入。" Margin="0,8,0,0" />
+                </StackPanel>
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel" BasedOn="{StaticResource PagePanel}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedPage}" Value="设置">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="设置" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="本地数据" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="您的知识库文件保存在本机。" Margin="0,12,0,8" />
+                    <TextBox Text="{Binding DataRoot, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Padding="12"
+                        AutomationProperties.Name="本地数据目录" />
+                    <TextBlock Text="软件程序与用户数据分开保存，升级不应删除知识库。" Margin="0,8,0,24" />
+                    <TextBlock Text="AI 服务" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="尚未配置。服务商选择、密钥安全保存与连接测试将在后续批次提供。" Margin="0,12,0,0" />
+                    <TextBlock Text="调用在线 AI 时，只发送当前问题相关的检索片段。" Margin="0,8,0,0" />
+                </StackPanel>
+                </Grid>
+            </ScrollViewer>
+            <TextBlock Grid.Row="1" Text="您的知识库文件保存在本机。" Foreground="#596779" Margin="0,16,0,0" />
+        </Grid>
+    </Grid>
+</Window>

@@ -9,7 +9,7 @@ Windows 10 的操作系统维护状态独立于应用兼容性；实际支持范
 
 三个程序集即可：Core 为领域模型及接口；Infrastructure 为本地与网络适配器；Desktop 为 WPF UI 与协调。
 模块目录按职责划分，无需每个目录单独建立项目。依赖方向 Desktop → Infrastructure → Core，Desktop 可直接引用 Core。
-当前 Desktop 为项目骨架库，BATCH 1 再加入应用入口。
+BATCH 0 时 Desktop 为项目骨架库；BATCH 1 已加入 WPF 应用入口，OutputType 为 WinExe。
 
 ## 通用数据模型
 
