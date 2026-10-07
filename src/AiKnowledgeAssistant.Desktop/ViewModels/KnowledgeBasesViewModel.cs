@@ -11,6 +11,7 @@ public sealed class KnowledgeBasesViewModel : INotifyPropertyChanged
     private readonly IKnowledgeBaseStore store;
     private readonly IKnowledgeBaseDialogs dialogs;
     public ObservableCollection<KnowledgeBase> Items { get; } = new();
+    public DocumentsViewModel? Documents { get; set; }
     public RelayCommand CreateCommand { get; }
     public RelayCommand RenameCommand { get; }
     public RelayCommand DeleteCommand { get; }
@@ -26,6 +27,7 @@ public sealed class KnowledgeBasesViewModel : INotifyPropertyChanged
             if (selected == value) return;
             selected = value;
             OnPropertyChanged();
+            Documents?.SelectKnowledgeBase(value);
             RenameCommand.NotifyCanExecuteChanged();
             DeleteCommand.NotifyCanExecuteChanged();
         }

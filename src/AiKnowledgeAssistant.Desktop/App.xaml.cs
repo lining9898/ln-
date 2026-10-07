@@ -3,6 +3,7 @@ using System.Windows;
 using AiKnowledgeAssistant.Desktop.ViewModels;
 using AiKnowledgeAssistant.Desktop.UI;
 using AiKnowledgeAssistant.Infrastructure.Storage;
+using AiKnowledgeAssistant.Infrastructure.Documents;
 
 namespace AiKnowledgeAssistant.Desktop;
 
@@ -16,9 +17,13 @@ public partial class App : Application
             var paths = UserDataPaths.ForCurrentUser();
             paths.EnsureDirectories();
             var window = new MainWindow();
-            var knowledgeBases = new KnowledgeBasesViewModel(new JsonKnowledgeBaseStore(paths),
-                new KnowledgeBaseDialogs(window));
-            window.DataContext = new MainViewModel(paths, knowledgeBases);
+            var knowledgeBaseStore = new JsonKnowledgeBaseStore(paths);
+            var documentRepository = new JsonDocumentRepository(paths);
+            var documents = new DocumentsViewModel(documentRepository,
+                new DocumentImportService(knowledgeBaseStore, documentRepository, paths));
+            var knowledgeBases = new KnowledgeBasesViewModel(knowledgeBaseStore,
+                new KnowledgeBaseDialogs(window)) { Documents = documents };
+            window.DataContext = new MainViewModel(paths, knowledgeBases, documents);
             MainWindow = window;
             window.Show();
             knowledgeBases.Refresh();

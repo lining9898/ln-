@@ -93,3 +93,19 @@ databases/knowledge-bases.json 保存 schema_version=1 和 knowledge_bases 列�
 BATCH 2 删除仅移除匹配 ID 的元数据，不递归删除目录。未来文档关联及清理需在导入批次独立实现并测试。
 BATCH 5 迁移 SQLite 时保留 knowledge_base_id、名称、时间戳和 schema 版本信息，校验后才切换。
 文件锁/原子替换的 Windows 行为和断电恢复能力尚未实机验证；不能据 Linux 测试承诺断电零丢失。
+
+## BATCH 3 已实现的文件导入约定
+
+文档元数据位于 databases/documents.json（schema_version=1）；接口为 Core 的 IDocumentRepository、IDocumentImporter。
+知识库元数据与文档元数据分别有各自 JSON 目录，每类记录只有一个权威数据源；BATCH 5 将两类数据迁移到 SQLite 后停止以 JSON 为权威写入。
+受管理副本路径：documents/<knowledge_base_id:N>/<document_id:N>.<规范化扩展名>，不拼接原文件名。
+每个副本保存 SHA-256，同库同哈希拒绝重复导入；跨库允许相同内容。
+源文件不作为运行依赖；扩展名筛选 PDF/DOCX/TXT/MD，文件内容有效性留给 BATCH 4 解析检查。
+状态仅 PENDING；UI 对应“待解析”“待索引”。
+
+导入持有知识库元数据锁直到文档提交完成；删除知识库使用同一锁并检查文档目录。
+已有文档时拒绝删除知识库，以免产生无归属文档；后续文档删除能力和关联清理须另行设计。
+复制先写暂存文件并同时计算哈希，重复或复制失败清理暂存文件。
+随后将副本移到最终路径、原子更新文档 JSON；写入失败回读记录，确认没有提交才删副本。
+若回读也失败则保留副本并提示状态不确定，避免删掉已记录的文件。
+非正常断电仍可能留下未入库副本或暂存文件，留待后续恢复机制处理；不宣称断电零孤儿文件。

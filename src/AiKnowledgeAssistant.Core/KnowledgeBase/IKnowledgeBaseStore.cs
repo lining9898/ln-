@@ -6,4 +6,5 @@ public interface IKnowledgeBaseStore
     KnowledgeBase Create(string name);
     KnowledgeBase Rename(Guid id, string name);
     void Delete(Guid id);
+    T ExecuteForExisting<T>(Guid id, Func<T> action);
 }

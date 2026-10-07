@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AiKnowledgeAssistant.Core.KnowledgeBase;
+using AiKnowledgeAssistant.Core.Documents;
 using AiKnowledgeAssistant.Core.Storage;
 
 namespace AiKnowledgeAssistant.Infrastructure.Storage;
@@ -9,12 +10,14 @@ public sealed class JsonKnowledgeBaseStore : IKnowledgeBaseStore
 {
     private readonly string filePath;
     private readonly string lockPath;
+    private readonly IDocumentRepository documents;
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     public JsonKnowledgeBaseStore(IUserDataPaths paths)
     {
         filePath = Path.Combine(paths.Databases, "knowledge-bases.json");
         lockPath = filePath + ".lock";
+        documents = new JsonDocumentRepository(paths);
     }
 
     // A per-file exclusive lock serializes read-modify-write across instances/processes.
@@ -61,8 +64,17 @@ public sealed class JsonKnowledgeBaseStore : IKnowledgeBaseStore
         using var fileLock = AcquireLock();
         var data = Read();
         data.KnowledgeBases.RemoveAt(Find(data, id));
-        // BATCH 2 has no document data; do not recursively delete any directories.
+        if (documents.HasDocuments(id))
+            throw new InvalidOperationException("该知识库已有文件。当前批次暂不支持删除非空知识库，以避免丢失资料。");
         Write(data);
+    }
+
+    public T ExecuteForExisting<T>(Guid id, Func<T> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        using var fileLock = AcquireLock();
+        Find(Read(), id);
+        return action();
     }
 
     private static int Find(Snapshot data, Guid id)

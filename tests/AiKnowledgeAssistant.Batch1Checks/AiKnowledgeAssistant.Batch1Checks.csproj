@@ -6,5 +6,6 @@
     <Compile Include="../../src/AiKnowledgeAssistant.Desktop/ViewModels/KnowledgeBasesViewModel.cs" Link="KnowledgeBasesViewModel.cs" />
     <Compile Include="../../src/AiKnowledgeAssistant.Desktop/ViewModels/IKnowledgeBaseDialogs.cs" Link="IKnowledgeBaseDialogs.cs" />
     <Compile Include="../../src/AiKnowledgeAssistant.Desktop/ViewModels/RelayCommand.cs" Link="RelayCommand.cs" />
+    <Compile Include="../../src/AiKnowledgeAssistant.Desktop/ViewModels/DocumentsViewModel.cs" Link="DocumentsViewModel.cs" />
   </ItemGroup>
 </Project>
