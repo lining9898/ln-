@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -85,8 +86,9 @@ public sealed class KnowledgeBasesViewModel : INotifyPropertyChanged
     }
 
     public static bool IsExpectedError(Exception e) =>
-        e is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException;
-    public static string ErrorMessage(Exception e) => e switch
+        e is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException || e is DbException;
+    public static string ErrorMessage(Exception e) => e is DbException
+        ? "SQLite 数据库读写失败。请检查磁盘空间与权限，并保留原数据库。" : e switch
     {
         InvalidDataException => "知识库数据损坏或版本不受支持，已停止操作。请保留原文件。",
         IOException or UnauthorizedAccessException => "无法读写知识库数据。请检查目录权限、磁盘空间，或关闭其他正在操作知识库的软件窗口后重试。",

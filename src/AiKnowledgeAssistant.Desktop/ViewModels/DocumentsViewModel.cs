@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -209,7 +210,8 @@ public sealed class DocumentsViewModel : INotifyPropertyChanged
         }
     }
 
-    private static string SafeError(Exception e) => e switch
+    private static string SafeError(Exception e) => e is DbException
+        ? "SQLite 数据库读写失败，请检查磁盘空间与权限" : e switch
     {
         FileNotFoundException => "文件不存在或无法读取",
         UnauthorizedAccessException => "没有读取或写入权限",

@@ -3,10 +3,12 @@ using System.Windows;
 using AiKnowledgeAssistant.Desktop.ViewModels;
 using AiKnowledgeAssistant.Desktop.UI;
 using AiKnowledgeAssistant.Infrastructure.Storage;
+using AiKnowledgeAssistant.Infrastructure.Database;
 using AiKnowledgeAssistant.Infrastructure.Documents;
 using AiKnowledgeAssistant.Infrastructure.Parser;
 using AiKnowledgeAssistant.Infrastructure.OCR;
 using AiKnowledgeAssistant.Core.Documents;
+using Microsoft.Data.Sqlite;
 
 namespace AiKnowledgeAssistant.Desktop;
 
@@ -20,8 +22,11 @@ public partial class App : Application
             var paths = UserDataPaths.ForCurrentUser();
             paths.EnsureDirectories();
             var window = new MainWindow();
-            var knowledgeBaseStore = new JsonKnowledgeBaseStore(paths);
-            var documentRepository = new JsonDocumentRepository(paths);
+            var database = new SqliteDatabase(paths);
+            database.Initialize();
+            new LegacyJsonMigration(database).MigrateIfNeeded();
+            var knowledgeBaseStore = new SqliteKnowledgeBaseStore(database);
+            var documentRepository = new SqliteDocumentRepository(database);
             documentRepository.RecoverInterruptedParsing();
             var parsers = new IDocumentParser[] {
                 new PdfDocumentParser(new TesseractPdfPageOcr()),
@@ -38,10 +43,10 @@ public partial class App : Application
             window.Show();
             knowledgeBases.Refresh();
         }
-        catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException)
+        catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException or SqliteException)
         {
             // Do not expose exception text, user paths or private content in logs.
-            MessageBox.Show("无法创建本地数据目录。请检查当前用户的磁盘空间与目录访问权限，然后重新打开软件。",
+            MessageBox.Show("本地数据无法安全打开或迁移。请检查磁盘空间与目录权限，并保留原数据库和旧 JSON 备份。",
                 "AI 知识库助手", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
