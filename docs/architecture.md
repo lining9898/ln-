@@ -25,7 +25,7 @@ SourceLocator 区分 PDF 页码、DOCX 段落/标题、TXT/MD 行号；非 PDF �
 Microsoft.Data.Sqlite + SQLite FTS5；版本化迁移、外键、事务和 WAL。
 首版一个本地数据库，按 KnowledgeBaseId 逻辑隔离；无数据库服务。
 跨库查询显式筛选 ID，删除库级联清理关系、索引与受管理副本。
-BATCH 2/3 先用可替换 JSON 管理元数据，BATCH 4 使用解析结果文件；BATCH 5 一次性迁移到 SQLite，验证后才删除旧数据。
+BATCH 2/3 先用可替换 JSON 管理元数据，BATCH 4 使用解析结果文件；BATCH 5 一次性迁移到 SQLite，旧 JSON 保留作迁移备份但不再双写。
 这遵守用户批次顺序，避免提前实现 SQLite 或双写两套存储。
 
 ## 解析与 OCR

@@ -1,5 +1,6 @@
 using AiKnowledgeAssistant.Core.Storage;
 using Microsoft.Data.Sqlite;
+using AiKnowledgeAssistant.Infrastructure.Retrieval;
 
 namespace AiKnowledgeAssistant.Infrastructure.Database;
 
@@ -8,7 +9,7 @@ public sealed record DatabaseAudit(int KnowledgeBaseCount, int DocumentCount, in
 
 public sealed class SqliteDatabase
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public string FilePath { get; }
     internal IUserDataPaths Paths { get; }
     internal string LockPath => FilePath + ".write.lock";
@@ -22,6 +23,7 @@ public sealed class SqliteDatabase
     public void Initialize()
     {
         Directory.CreateDirectory(Paths.Databases);
+        using var initializationLock = WriteLock(LockPath);
         try
         {
             using var db = Open();
@@ -33,10 +35,13 @@ public sealed class SqliteDatabase
                 command.ExecuteNonQuery();
             }
             var hasVersion = ScalarLong(db, "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='schema_version';") == 1;
+            var version = 0L;
             if (hasVersion)
             {
-                var version = ScalarLong(db, "SELECT version FROM schema_version LIMIT 1;");
-                if (version != CurrentSchemaVersion || ScalarLong(db, "SELECT count(*) FROM schema_version;") != 1)
+                if (ScalarLong(db, "SELECT count(*) FROM schema_version;") != 1)
+                    throw new InvalidDataException("SQLite 数据库 Schema 版本异常，请保留原数据库。");
+                version = ScalarLong(db, "SELECT version FROM schema_version LIMIT 1;");
+                if (version is < 1 or > CurrentSchemaVersion)
                     throw new InvalidDataException("SQLite 数据库 Schema 版本不受支持，请保留原数据库。");
             }
             else
@@ -46,6 +51,24 @@ public sealed class SqliteDatabase
                 using var transaction = db.BeginTransaction();
                 Execute(db, transaction, SchemaV1);
                 Execute(db, transaction, "INSERT INTO schema_version(version) VALUES (1);");
+                transaction.Commit();
+                version = 1;
+            }
+            if (version == 1)
+            {
+                using var transaction = db.BeginTransaction();
+                Execute(db, transaction, SchemaV2);
+                using (var command = db.CreateCommand())
+                {
+                    command.Transaction = transaction;
+                    command.CommandText = "SELECT rowid,content_id,knowledge_base_id,text FROM parsed_content ORDER BY rowid;";
+                    var rows = new List<(long RowId, string Id, string Kb, string Text)>();
+                    using (var reader = command.ExecuteReader())
+                        while (reader.Read()) rows.Add((reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetString(3)));
+                    foreach (var row in rows) SqliteDocumentSearch.Insert(db, transaction, row.RowId, row.Id, row.Kb, row.Text);
+                }
+                Execute(db, transaction, "UPDATE documents SET index_status='COMPLETED' WHERE parse_status IN ('COMPLETED','PARTIAL');");
+                Execute(db, transaction, "UPDATE schema_version SET version=2;");
                 transaction.Commit();
             }
             if (!Audit().ForeignKeyClean)
@@ -118,6 +141,17 @@ public sealed class SqliteDatabase
         cmd.ExecuteNonQuery();
     }
     internal static FileStream WriteLock(string path) => new(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
+    private const string SchemaV2 = """
+        CREATE VIRTUAL TABLE content_fts USING fts5(content_id UNINDEXED, knowledge_base_id UNINDEXED, terms, tokenize='unicode61 remove_diacritics 2');
+        CREATE TRIGGER parsed_content_fts_delete AFTER DELETE ON parsed_content BEGIN
+          DELETE FROM content_fts WHERE rowid=old.rowid;
+        END;
+        CREATE TRIGGER parsed_content_fts_text_update AFTER UPDATE OF text ON parsed_content BEGIN
+          DELETE FROM content_fts WHERE rowid=old.rowid;
+          UPDATE documents SET index_status='PENDING' WHERE document_id=old.document_id;
+        END;
+        """;
 
     private const string SchemaV1 = """
         CREATE TABLE schema_version(version INTEGER NOT NULL);

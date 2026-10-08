@@ -134,7 +134,7 @@ try
     using (var conn=v1Database.Open())
     {
         using var cmd=conn.CreateCommand();cmd.CommandText="SELECT version FROM schema_version;";
-        Check(Convert.ToInt64(cmd.ExecuteScalar())==1,"schema_version=1");
+        Check(Convert.ToInt64(cmd.ExecuteScalar())==2,"schema_version 升级至 2");
         cmd.CommandText="UPDATE schema_version SET version=999;";cmd.ExecuteNonQuery();
     }
     try {v1Database.Initialize();failures.Add("不支持的 Schema 版本保留");}

@@ -21,13 +21,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
     public KnowledgeBasesViewModel? KnowledgeBases { get; }
     public DocumentsViewModel? Documents { get; }
+    public DocumentSearchViewModel? Search { get; }
     public string DataRoot { get; }
     public MainViewModel(IUserDataPaths paths, KnowledgeBasesViewModel? knowledgeBases = null,
-        DocumentsViewModel? documents = null)
+        DocumentsViewModel? documents = null, DocumentSearchViewModel? search = null)
     {
         DataRoot = paths.Root;
         KnowledgeBases = knowledgeBases;
         Documents = documents;
+        Search = search;
+        if (knowledgeBases is not null && search is not null)
+            knowledgeBases.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(KnowledgeBasesViewModel.Selected)) search.ClearResults();
+            };
     }
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>

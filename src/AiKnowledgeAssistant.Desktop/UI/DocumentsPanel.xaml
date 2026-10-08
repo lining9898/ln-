@@ -12,7 +12,7 @@
                 <TextBlock Text="支持 PDF、DOCX、TXT、MD；也可将文件拖到此区域。"
                     VerticalAlignment="Center" Foreground="#596779" />
             </WrapPanel>
-            <TextBlock Text="文件复制到本机后自动解析；检索索引将在后续批次建立。"
+            <TextBlock Text="文件复制到本机后自动解析并建立本地搜索索引。"
                 Foreground="#596779" Margin="0,0,0,12" />
             <Button Content="解析 / 重新解析" Click="ReparseClick"
                 IsEnabled="{Binding CanParse}" HorizontalAlignment="Left" Margin="0,0,0,12" />

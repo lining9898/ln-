@@ -124,7 +124,7 @@ public sealed class DocumentsViewModel : INotifyPropertyChanged
                             var parsedDocument = await Task.Run(() => parser.Reparse(imported.Id));
                             message = parsedDocument.ParseStatus switch
                             {
-                                ProcessingStatus.Completed => "已导入并解析，待索引",
+                                ProcessingStatus.Completed => "已导入、解析并建立索引",
                                 ProcessingStatus.Partial => "已导入，部分页面解析失败，可重新解析",
                                 _ => "已导入，解析失败，可重新解析"
                             };
@@ -173,7 +173,7 @@ public sealed class DocumentsViewModel : INotifyPropertyChanged
                 Refresh();
                 ImportSummary = updated.ParseStatus switch
                 {
-                    ProcessingStatus.Completed => "重新解析完成；索引尚未建立。",
+                    ProcessingStatus.Completed => "重新解析完成，索引已更新。",
                     ProcessingStatus.Partial => "部分内容解析成功，失败页见下方。",
                     _ => "解析失败，原因见下方；受管理原文件已保留。"
                 };
@@ -248,7 +248,7 @@ public sealed record DocumentListItem(Document Document)
         _ => "解析失败"
     };
     public string ParseError => Document.ParseError ?? "";
-    public string IndexStatus => "待索引";
+    public string IndexStatus => Document.IndexStatus == ProcessingStatus.Completed ? "已完成" : "待索引";
 }
 
 public sealed record ParsedUnitListItem(ParsedUnit Unit)

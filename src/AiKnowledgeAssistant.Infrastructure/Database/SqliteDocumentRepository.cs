@@ -1,5 +1,6 @@
 using AiKnowledgeAssistant.Core.Documents;
 using Microsoft.Data.Sqlite;
+using AiKnowledgeAssistant.Infrastructure.Retrieval;
 
 namespace AiKnowledgeAssistant.Infrastructure.Database;
 
@@ -74,7 +75,7 @@ public sealed class SqliteDocumentRepository(SqliteDatabase database) : IDocumen
         using var db = database.Open(); using var tx = db.BeginTransaction();
         var doc = Find(db,tx,documentId) ?? throw new InvalidOperationException("文档不存在，请刷新列表。");
         if (doc.ParseStatus == ProcessingStatus.Parsing) throw new InvalidOperationException("此文档已在解析中。");
-        SqliteDatabase.Execute(db,tx,"UPDATE documents SET parse_status='PARSING',parse_error=NULL,updated_at=$now WHERE document_id=$id;",
+        SqliteDatabase.Execute(db,tx,"UPDATE documents SET parse_status='PARSING',index_status='PENDING',parse_error=NULL,updated_at=$now WHERE document_id=$id;",
             ("$now",DateTimeOffset.UtcNow.ToString("O")),("$id",documentId.ToString("N")));
         tx.Commit();
     }
@@ -93,8 +94,9 @@ public sealed class SqliteDocumentRepository(SqliteDatabase database) : IDocumen
         var summary = result.Failures.Count > 0 ? string.Join("；",result.Failures.Take(3).Select(f =>
             f.PageNumber is int p ? $"第 {p} 页：{f.Reason}" : f.Reason)) :
             status == ProcessingStatus.Failed ? "未提取到可用文本。" : null;
-        SqliteDatabase.Execute(db,tx,"UPDATE documents SET parse_status=$status,parse_error=$error,total_pages=$pages,updated_at=$now WHERE document_id=$id;",
+        SqliteDatabase.Execute(db,tx,"UPDATE documents SET parse_status=$status,parse_error=$error,total_pages=$pages,index_status=$index,updated_at=$now WHERE document_id=$id;",
             ("$status",status.ToString().ToUpperInvariant()),("$error",summary),("$pages",result.PageCount),
+            ("$index",result.Units.Count>0?"COMPLETED":"PENDING"),
             ("$now",DateTimeOffset.UtcNow.ToString("O")),("$id",documentId.ToString("N")));
         tx.Commit();
     }
@@ -108,6 +110,7 @@ public sealed class SqliteDocumentRepository(SqliteDatabase database) : IDocumen
                  THEN CASE WHEN EXISTS(SELECT 1 FROM parse_failures f WHERE f.document_id=documents.document_id) THEN 'PARTIAL' ELSE 'COMPLETED' END
                  ELSE 'FAILED' END
               ELSE 'FAILED' END,
+              index_status=CASE WHEN EXISTS(SELECT 1 FROM parsed_content c WHERE c.document_id=documents.document_id) THEN 'COMPLETED' ELSE 'PENDING' END,
               parse_error='上次解析被中断；原有解析内容已保留，请重新解析。',
               updated_at=$now WHERE parse_status='PARSING';
             """,("$now",DateTimeOffset.UtcNow.ToString("O")));
@@ -126,12 +129,16 @@ public sealed class SqliteDocumentRepository(SqliteDatabase database) : IDocumen
             ("$doc",p.DocumentId.ToString("N")),("$kb",p.KnowledgeBaseId.ToString("N")),("$parser",p.ParserType),
             ("$pages",p.PageCount),("$created",p.CreatedAt.ToString("O")));
         foreach (var u in p.Units)
+        {
+            var contentId=Guid.NewGuid().ToString("N");
             SqliteDatabase.Execute(db,tx,"INSERT INTO parsed_content VALUES($id,$doc,$kb,$seq,$text,$source,$page,$title,$section,$start,$end,$para,$parser,$created);",
-                ("$id",Guid.NewGuid().ToString("N")),("$doc",u.DocumentId.ToString("N")),("$kb",u.KnowledgeBaseId.ToString("N")),
+                ("$id",contentId),("$doc",u.DocumentId.ToString("N")),("$kb",u.KnowledgeBaseId.ToString("N")),
                 ("$seq",u.Sequence),("$text",u.Text),("$source",u.SourceType.ToString().ToUpperInvariant()),
                 ("$page",u.PageNumber),("$title",u.SectionTitle),("$section",u.SectionPath),
                 ("$start",u.StartLine),("$end",u.EndLine),("$para",u.ParagraphNumber),
                 ("$parser",u.ParserType),("$created",u.CreatedAt.ToString("O")));
+            SqliteDocumentSearch.Insert(db,tx,SqliteDatabase.ScalarLong(db,"SELECT last_insert_rowid();",tx),contentId,p.KnowledgeBaseId.ToString("N"),u.Text);
+        }
         foreach (var f in p.Failures)
             SqliteDatabase.Execute(db,tx,"INSERT INTO parse_failures VALUES($id,$doc,$kb,$page,$reason);",
                 ("$id",Guid.NewGuid().ToString("N")),("$doc",p.DocumentId.ToString("N")),
