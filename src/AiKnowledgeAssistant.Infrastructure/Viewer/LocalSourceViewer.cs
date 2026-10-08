@@ -44,12 +44,14 @@ public sealed class LocalSourceViewer(IDocumentRepository documents, IParsedCont
             throw new ArgumentOutOfRangeException(nameof(pageNumber), "页码超出 PDF 范围。");
         var page = pdf.GetPage(pageNumber);
         var text = page.Text;
-        if (string.IsNullOrWhiteSpace(text))
+        var unit = parsed.GetParsed(document.Id)?.Units
+            .Where(u => u.PageNumber == pageNumber)
+            .OrderBy(u => u.Sequence)
+            .FirstOrDefault();
+        if (unit?.SourceType == SourceType.Ocr && !string.IsNullOrWhiteSpace(unit.Text))
+            text = unit.Text;
+        else if (string.IsNullOrWhiteSpace(text))
         {
-            var unit = parsed.GetParsed(document.Id)?.Units
-                .Where(u => u.PageNumber == pageNumber)
-                .OrderBy(u => u.Sequence)
-                .FirstOrDefault();
             text = unit?.Text ?? "此页没有可提取文本；如为扫描页，请先完成 OCR。";
         }
         return new SourceView(document.KnowledgeBaseId, document.Id, contentId, document.OriginalFileName,
