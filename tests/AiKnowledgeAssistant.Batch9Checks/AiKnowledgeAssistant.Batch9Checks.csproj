@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/AiKnowledgeAssistant.Core/AiKnowledgeAssistant.Core.csproj" />
+    <ProjectReference Include="../../src/AiKnowledgeAssistant.Infrastructure/AiKnowledgeAssistant.Infrastructure.csproj" />
+    <Compile Include="../../src/AiKnowledgeAssistant.Desktop/ViewModels/DocumentSearchViewModel.cs" Link="DocumentSearchViewModel.cs" />
+    <Compile Include="../../src/AiKnowledgeAssistant.Desktop/ViewModels/RelayCommand.cs" Link="RelayCommand.cs" />
+  </ItemGroup>
+</Project>

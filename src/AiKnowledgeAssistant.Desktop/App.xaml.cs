@@ -8,6 +8,7 @@ using AiKnowledgeAssistant.Infrastructure.Documents;
 using AiKnowledgeAssistant.Infrastructure.Parser;
 using AiKnowledgeAssistant.Infrastructure.OCR;
 using AiKnowledgeAssistant.Infrastructure.Retrieval;
+using AiKnowledgeAssistant.Infrastructure.Viewer;
 using AiKnowledgeAssistant.Core.Documents;
 using Microsoft.Data.Sqlite;
 
@@ -40,7 +41,7 @@ public partial class App : Application
             var knowledgeBases = new KnowledgeBasesViewModel(knowledgeBaseStore,
                 new KnowledgeBaseDialogs(window)) { Documents = documents };
             var search = new DocumentSearchViewModel(new SqliteDocumentSearch(database),
-                () => knowledgeBases.Selected?.Id);
+                () => knowledgeBases.Selected?.Id, new LocalSourceViewer(documentRepository, documentRepository));
             window.DataContext = new MainViewModel(paths, knowledgeBases, documents, search);
             MainWindow = window;
             window.Show();
