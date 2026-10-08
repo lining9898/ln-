@@ -114,8 +114,11 @@ try
     var tessdata = Environment.GetEnvironmentVariable("AKA_TEST_TESSDATA");
     if (!string.IsNullOrWhiteSpace(tessdata))
     {
+        var pdftoppm = Environment.GetEnvironmentVariable("AKA_TEST_PDFTOPPM") ?? "pdftoppm";
+        var tesseract = Environment.GetEnvironmentVariable("AKA_TEST_TESSERACT") ??
+            (OperatingSystem.IsWindows() ? @"C:\Program Files\Tesseract-OCR\tesseract.exe" : "tesseract");
         var actual = new DocumentParsingService(repo, repo,
-            [new PdfDocumentParser(new TesseractPdfPageOcr("/usr/bin/pdftoppm", "/usr/bin/tesseract", tessdata))]);
+            [new PdfDocumentParser(new TesseractPdfPageOcr(pdftoppm, tesseract, tessdata))]);
         var ocrDocument = actual.Reparse(mixed.Id);
         var ocrResult = repo.GetParsed(mixed.Id)!;
         Check(ocrDocument.ParseStatus == ProcessingStatus.Completed &&
@@ -241,9 +244,11 @@ try
         "UI 区分导入成功与后续解析器故障");
     var catalog = File.ReadAllText(Path.Combine(paths.Databases, "documents.json"));
     Check(catalog.Contains("\"schema_version\": 2", StringComparison.Ordinal) &&
-        catalog.Contains("\"source_type\": \"OCR\"", StringComparison.Ordinal) &&
+        (string.IsNullOrWhiteSpace(tessdata) || catalog.Contains("\"source_type\": \"OCR\"", StringComparison.Ordinal)) &&
         catalog.Contains("\"parse_status\": \"COMPLETED\"", StringComparison.Ordinal),
-        "版本化存储实际写入解析数据、来源类型和状态");
+        string.IsNullOrWhiteSpace(tessdata)
+            ? "版本化存储实际写入解析数据和状态"
+            : "版本化存储实际写入解析数据、来源类型和状态");
     var catalogPath = Path.Combine(paths.Databases, "documents.json");
     var malformed = JsonNode.Parse(catalog)!.AsObject();
     malformed.Remove("parsed_documents");

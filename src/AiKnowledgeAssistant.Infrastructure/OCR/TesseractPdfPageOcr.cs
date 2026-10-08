@@ -14,13 +14,19 @@ public sealed class TesseractPdfPageOcr : IPdfPageOcr
         string? tessdataDirectory = null)
     {
         var bundled = Path.Combine(AppContext.BaseDirectory, "tools", "ocr");
-        this.renderer = renderer ?? (File.Exists(Path.Combine(bundled, "pdftoppm.exe"))
-            ? Path.Combine(bundled, "pdftoppm.exe") : "pdftoppm");
-        this.tesseract = tesseract ?? (File.Exists(Path.Combine(bundled, "tesseract.exe"))
-            ? Path.Combine(bundled, "tesseract.exe") : "tesseract");
+        this.renderer = renderer ?? FirstExisting(Environment.GetEnvironmentVariable("AKA_PDFTOPPM"),
+            Path.Combine(bundled, "pdftoppm.exe"),
+            @"C:\Program Files\poppler\Library\bin\pdftoppm.exe",
+            @"C:\Program Files\poppler\bin\pdftoppm.exe") ?? "pdftoppm";
+        this.tesseract = tesseract ?? FirstExisting(Environment.GetEnvironmentVariable("AKA_TESSERACT"),
+            Path.Combine(bundled, "tesseract.exe"),
+            @"C:\Program Files\Tesseract-OCR\tesseract.exe",
+            @"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe") ?? "tesseract";
         this.tessdataDirectory = tessdataDirectory ??
-            (Directory.Exists(Path.Combine(bundled, "tessdata"))
-                ? Path.Combine(bundled, "tessdata") : null);
+            FirstExistingDirectory(Environment.GetEnvironmentVariable("AKA_TESSDATA"),
+                Path.Combine(bundled, "tessdata"),
+                @"C:\Program Files\Tesseract-OCR\tessdata",
+                @"C:\Program Files (x86)\Tesseract-OCR\tessdata");
     }
 
     public string Recognize(string pdfPath, int physicalPageNumber)
@@ -72,5 +78,19 @@ public sealed class TesseractPdfPageOcr : IPdfPageOcr
         if (process.ExitCode != 0)
             throw new IOException("本地 OCR 工具执行失败；请检查工具和语言包。");
         return output.Result;
+    }
+
+    private static string? FirstExisting(params string?[] paths)
+    {
+        foreach (var path in paths)
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path)) return path;
+        return null;
+    }
+
+    private static string? FirstExistingDirectory(params string?[] paths)
+    {
+        foreach (var path in paths)
+            if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path)) return path;
+        return null;
     }
 }
