@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using System.Windows;
 using AiKnowledgeAssistant.Desktop.ViewModels;
 using AiKnowledgeAssistant.Desktop.UI;
@@ -9,6 +10,9 @@ using AiKnowledgeAssistant.Infrastructure.Parser;
 using AiKnowledgeAssistant.Infrastructure.OCR;
 using AiKnowledgeAssistant.Infrastructure.Retrieval;
 using AiKnowledgeAssistant.Infrastructure.Viewer;
+using AiKnowledgeAssistant.Infrastructure.Embedding;
+using AiKnowledgeAssistant.Infrastructure.AI;
+using AiKnowledgeAssistant.Infrastructure.Security;
 using AiKnowledgeAssistant.Core.Documents;
 using Microsoft.Data.Sqlite;
 
@@ -40,9 +44,18 @@ public partial class App : Application
                 parsing, documentRepository);
             var knowledgeBases = new KnowledgeBasesViewModel(knowledgeBaseStore,
                 new KnowledgeBaseDialogs(window)) { Documents = documents };
-            var search = new DocumentSearchViewModel(new SqliteDocumentSearch(database),
-                () => knowledgeBases.Selected?.Id, new LocalSourceViewer(documentRepository, documentRepository));
-            window.DataContext = new MainViewModel(paths, knowledgeBases, documents, search);
+            var fullTextSearch = new SqliteDocumentSearch(database);
+            var semanticSearch = new SqliteSemanticDocumentSearch(database, new HashingTextEmbedder());
+            var sourceViewer = new LocalSourceViewer(documentRepository, documentRepository);
+            var search = new DocumentSearchViewModel(fullTextSearch, () => knowledgeBases.Selected?.Id, sourceViewer);
+            var credentials = new WindowsCredentialStore();
+            const string credentialTarget = "AIKnowledgeAssistant/DeepSeek/APIKey";
+            var deepSeek = new DeepSeekChatProvider(new HttpClient { Timeout = TimeSpan.FromSeconds(45) },
+                credentials, new DeepSeekOptions(credentialTarget));
+            var ai = new AiAssistantViewModel(credentials, credentialTarget, deepSeek,
+                new RagAnswerService(new HybridDocumentSearch(fullTextSearch, semanticSearch), deepSeek),
+                new CitationVerifier(sourceViewer), () => knowledgeBases.Selected);
+            window.DataContext = new MainViewModel(paths, knowledgeBases, documents, search, ai);
             MainWindow = window;
             window.Show();
             knowledgeBases.Refresh();

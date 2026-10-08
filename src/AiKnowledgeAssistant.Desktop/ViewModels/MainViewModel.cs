@@ -22,14 +22,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public KnowledgeBasesViewModel? KnowledgeBases { get; }
     public DocumentsViewModel? Documents { get; }
     public DocumentSearchViewModel? Search { get; }
+    public AiAssistantViewModel? Ai { get; }
     public string DataRoot { get; }
     public MainViewModel(IUserDataPaths paths, KnowledgeBasesViewModel? knowledgeBases = null,
-        DocumentsViewModel? documents = null, DocumentSearchViewModel? search = null)
+        DocumentsViewModel? documents = null, DocumentSearchViewModel? search = null,
+        AiAssistantViewModel? ai = null)
     {
         DataRoot = paths.Root;
         KnowledgeBases = knowledgeBases;
         Documents = documents;
         Search = search;
+        Ai = ai;
         if (knowledgeBases is not null && search is not null)
             knowledgeBases.PropertyChanged += (_, e) =>
             {

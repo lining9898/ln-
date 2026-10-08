@@ -40,24 +40,41 @@
                     </StackPanel.Style>
                     <TextBlock Text="AI问答" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="选择知识库" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <Border Background="#EDF2F7" Padding="16" CornerRadius="6">
-                        <TextBlock Text="请先在“知识库”页面建立并导入资料。问答将在后续批次提供。" />
-                    </Border>
-                    <Border BorderBrush="#D9E1EA" BorderThickness="1" CornerRadius="6" Padding="24" Margin="0,20,0,16" MinHeight="230">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="向你的资料提问" FontSize="20" HorizontalAlignment="Center" />
-                            <TextBlock Text="导入资料后，可根据知识库内容获取答案并查看引用来源。" Margin="0,12,0,0" />
-                            <TextBlock Text="当前尚未接入 AI；本页暂不生成回答。" Margin="0,8,0,0" Foreground="#596779" />
-                        </StackPanel>
-                    </Border>
-                    <TextBlock Text="请输入你的问题……" Margin="0,0,0,8" />
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                        <TextBox IsEnabled="False" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap"
-                            AutomationProperties.Name="问题输入框，暂未开放" />
-                        <Button Grid.Column="1" Content="发送" IsEnabled="False" Margin="12,0,0,0" VerticalAlignment="Bottom" />
-                    </Grid>
-                    <TextBlock Text="未配置 API Key 时，后续本地搜索功能仍可使用。" Margin="0,12,0,0" Foreground="#596779" />
+                    <ComboBox ItemsSource="{Binding KnowledgeBases.Items}"
+                        SelectedItem="{Binding KnowledgeBases.Selected, Mode=TwoWay}"
+                        DisplayMemberPath="Name" MinHeight="36" Margin="0,0,0,12"
+                        AutomationProperties.Name="AI问答目标知识库" />
+                    <StackPanel DataContext="{Binding Ai}">
+                        <TextBlock Text="{Binding KeyStatus}" Foreground="#596779" Margin="0,0,0,12" />
+                        <TextBlock Text="请输入你的问题" Margin="0,0,0,8" />
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding Question, UpdateSourceTrigger=PropertyChanged}" MinHeight="84"
+                                AcceptsReturn="True" TextWrapping="Wrap" Padding="8"
+                                AutomationProperties.Name="AI问题输入框" />
+                            <Button Grid.Column="1" Content="发送" Command="{Binding AskCommand}" Margin="12,0,0,0"
+                                VerticalAlignment="Bottom" />
+                        </Grid>
+                        <TextBlock Text="{Binding Message}" Margin="0,12,0,12" Foreground="#596779" />
+                        <TextBox Text="{Binding Answer, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                            AcceptsReturn="True" MinHeight="180" Padding="12" VerticalScrollBarVisibility="Auto"
+                            AutomationProperties.Name="AI回答" />
+                        <TextBlock Text="引用来源" FontWeight="SemiBold" Margin="0,16,0,8" />
+                        <ListBox ItemsSource="{Binding Citations}" BorderThickness="0" Background="Transparent"
+                            AutomationProperties.Name="AI引用来源">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#D9E1EA" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Position}" Foreground="#596779" Margin="0,4,0,0" />
+                                            <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel>
                     <StackPanel.Style>
@@ -209,8 +226,18 @@
                         AutomationProperties.Name="本地数据目录" />
                     <TextBlock Text="软件程序与用户数据分开保存，升级不应删除知识库。" Margin="0,8,0,24" />
                     <TextBlock Text="AI 服务" FontSize="18" FontWeight="SemiBold" />
-                    <TextBlock Text="尚未配置。服务商选择、密钥安全保存与连接测试将在后续批次提供。" Margin="0,12,0,0" />
-                    <TextBlock Text="调用在线 AI 时，只发送当前问题相关的检索片段。" Margin="0,8,0,0" />
+                    <StackPanel DataContext="{Binding Ai}" Margin="0,12,0,0">
+                        <TextBlock Text="{Binding KeyStatus}" Foreground="#596779" Margin="0,0,0,8" />
+                        <TextBox Text="{Binding ApiKeyInput, UpdateSourceTrigger=PropertyChanged}" MinHeight="36"
+                            Padding="8" AutomationProperties.Name="DeepSeek API Key 输入框" />
+                        <WrapPanel Margin="0,10,0,8">
+                            <Button Content="保存 Key" Margin="0,0,8,0"
+                                Command="{Binding SaveKeyCommand}" />
+                            <Button Content="清除 Key" Command="{Binding ClearKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="测试连接" Command="{Binding TestConnectionCommand}" />
+                        </WrapPanel>
+                        <TextBlock Text="{Binding Message}" Margin="0,8,0,0" Foreground="#596779" />
+                    </StackPanel>
                 </StackPanel>
                 </Grid>
             </ScrollViewer>
