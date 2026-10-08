@@ -43,8 +43,9 @@ try
     var unrelatedDoc = importer.Import(otherKb.Id, unrelated);
     Check(parsing.Reparse(reimbursementDoc.Id).ParseStatus == ProcessingStatus.Completed, "RAG 资料解析完成");
     Check(parsing.Reparse(unrelatedDoc.Id).ParseStatus == ProcessingStatus.Completed, "隔离资料解析完成");
-    semantic.RebuildIndex();
+    Check(semantic.AuditIndex().IndexedCount == 0, "新导入资料尚无语义索引");
     var answer = await rag.AnswerAsync("差旅报销需要什么材料？", [kb.Id]);
+    Check(semantic.AuditIndex().IndexedCount == 1, "问答自动建立所选知识库的语义索引");
     Check(answer.UsedAi && answer.Answer.Contains("[S1]", StringComparison.Ordinal) &&
         answer.Citations.Count > 0 && answer.Citations[0].Hit.DocumentId == reimbursementDoc.Id,
         "RAG 使用检索片段生成带来源回答");

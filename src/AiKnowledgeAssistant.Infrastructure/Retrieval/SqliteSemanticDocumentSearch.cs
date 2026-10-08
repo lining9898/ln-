@@ -19,6 +19,8 @@ public sealed class SqliteSemanticDocumentSearch(SqliteDatabase database, ITextE
         if (limit is < 1 or > 200) throw new ArgumentOutOfRangeException(nameof(limit));
         if (knowledgeBaseIds.Count == 0 || string.IsNullOrWhiteSpace(query)) return [];
         EnsureSchema();
+        foreach (var knowledgeBaseId in knowledgeBaseIds.Distinct())
+            if (HasMissingEmbeddings(knowledgeBaseId)) RebuildIndex(knowledgeBaseId);
         var queryVector = embedder.EmbedQuery(query);
         using var db = database.Open();
         using var cmd = db.CreateCommand();
@@ -135,6 +137,27 @@ public sealed class SqliteSemanticDocumentSearch(SqliteDatabase database, ITextE
         var dimensionMismatch = Convert.ToInt32(dimensionCmd.ExecuteScalar());
         var clean = SqliteDatabase.ScalarLong(db, "SELECT count(*) FROM pragma_foreign_key_check;") == 0;
         return new SemanticIndexAudit(source, indexed, missing, orphan, dimensionMismatch, clean);
+    }
+
+    private bool HasMissingEmbeddings(Guid knowledgeBaseId)
+    {
+        using var db = database.Open();
+        using var cmd = db.CreateCommand();
+        cmd.CommandText = """
+            SELECT EXISTS(
+                SELECT 1 FROM parsed_content c
+                JOIN documents d ON d.document_id=c.document_id AND d.knowledge_base_id=c.knowledge_base_id
+                LEFT JOIN content_embeddings e ON e.content_id=c.content_id
+                    AND e.knowledge_base_id=c.knowledge_base_id AND e.model_id=$model
+                    AND e.chunk_version=$chunk AND e.dimension=$dimension
+                WHERE c.knowledge_base_id=$kb AND d.parse_status IN ('COMPLETED','PARTIAL')
+                    AND e.content_id IS NULL LIMIT 1);
+            """;
+        cmd.Parameters.AddWithValue("$kb", knowledgeBaseId.ToString("N"));
+        cmd.Parameters.AddWithValue("$model", embedder.ModelId);
+        cmd.Parameters.AddWithValue("$chunk", ChunkVersion);
+        cmd.Parameters.AddWithValue("$dimension", embedder.Dimension);
+        return Convert.ToInt32(cmd.ExecuteScalar()) != 0;
     }
 
     private void EnsureSchema()

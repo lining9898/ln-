@@ -105,10 +105,11 @@ public sealed class AiAssistantViewModel : INotifyPropertyChanged
         }
         IsBusy = true;
         Citations.Clear();
+        Message = "正在检索知识库并生成回答…";
         try
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-            var result = await rag.AnswerAsync(Question.Trim(), [kb.Id], timeout.Token);
+            var result = await Task.Run(() => rag.AnswerAsync(Question.Trim(), [kb.Id], timeout.Token));
             Answer = result.Answer;
             var verification = verifier.Verify(result);
             foreach (var item in verification.VerifiedCitations)

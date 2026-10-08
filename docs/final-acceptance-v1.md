@@ -2,7 +2,7 @@
 
 日期：2026-10-08。平台：Windows 10 x64。分支：`windows-real-validation-batch6`。安装器版本：0.1.1。
 
-交付文件：`artifacts/windows/AIKnowledgeAssistantSetup-win-x64.exe`（SHA-256 `86AF85EF21C9563FE9716F2E417FED0FBF337F1B2D7CB045C07AF4233BC1E114`）；`artifacts/windows/AIKnowledgeAssistant-win-x64.zip`（SHA-256 `261F3A5748DE71D52331C81E23425CD6DC54F9E66B6B2CE2D552EEAFF4B2820C`）。
+交付文件：`artifacts/windows/AIKnowledgeAssistantSetup-win-x64.exe`（SHA-256 `234EF0D795D99A40C4AF0EE61E2175DD962757D9BE2D3A2E7D626A3C6DA30537`）；`artifacts/windows/AIKnowledgeAssistant-win-x64.zip`（SHA-256 `6C55E5F929B36C7FF5DCAE49AEC314A6406B41111D7676A708E30CADC1F0E4E8`）。
 
 | 项目 | 状态 | 实际证据 |
 | --- | --- | --- |
@@ -20,3 +20,5 @@
 UI 脚本：`scripts/final-ui-acceptance.ps1`。此脚本只输入本地搜索词和无 Key 空值，不录入密钥或文档内容；检测到已配置 Key 时跳过连接测试。前次服务验收包括 FTS5、知识库隔离、数据持久化、引用核验和备份恢复；UI 验收未替代这些服务测试。OCR 来源页曾显示 PDF 内嵌水印文字，现已修复并对真实 WPF 页码跳转回归。代码审查未发现默认日志写入密钥、问题、回答或文档正文；这属于静态检查，不代表对外部诊断工具的审计。
 
 剩余人工验收：在“文档搜索”选择一条 PDF 结果，点击“打开来源”，对照外部 PDF 阅读器核对物理页码和版式；如需使用联网问答，在“设置”中亲自输入 Key，再测试一次连接、问答和引用原文。不要通过聊天发送 Key。
+
+问答修复追加验证：用户反馈“未找到足够依据”后，只读检查真实数据库发现 2008 条解析内容、2008 条全文索引、0 条语义索引。在独立 SQLite 副本中，用“蒸压加气混凝土墙板有什么要求？”检索得到 6 条证据，并自动为所选中文知识库建立 98 条语义索引。该验证未调用 DeepSeek，真实联网回答仍为 BLOCKED。
