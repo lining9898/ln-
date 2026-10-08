@@ -2,6 +2,8 @@ using AiKnowledgeAssistant.Core.Documents;
 using AiKnowledgeAssistant.Infrastructure.OCR;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AiKnowledgeAssistant.Infrastructure.Parser;
 
@@ -22,9 +24,13 @@ public sealed class PdfDocumentParser(IPdfPageOcr ocr) : IDocumentParser
                 var page = pdf.GetPage(pageNumber);
                 var text = ContentOrderTextExtractor.GetText(page).Trim();
                 var sourceType = SourceType.Text;
-                if (!text.Any(char.IsLetterOrDigit))
+                if (!HasUsefulExtractedText(text))
                 {
-                    if (!page.GetImages().Any()) continue; // Blank page: no false OCR failure.
+                    if (!page.GetImages().Any())
+                    {
+                        if (text.Any(char.IsLetterOrDigit)) goto AddUnit;
+                        continue; // Blank page: no false OCR failure.
+                    }
                     try
                     {
                         text = ocr.Recognize(document.ManagedFilePath, pageNumber).Trim();
@@ -42,6 +48,7 @@ public sealed class PdfDocumentParser(IPdfPageOcr ocr) : IDocumentParser
                         continue;
                     }
                 }
+                AddUnit:
                 units.Add(new ParsedUnit(document.Id, document.KnowledgeBaseId, units.Count + 1,
                     text, sourceType, pageNumber, null, null, null, null,
                     ParserType, DateTimeOffset.UtcNow));
@@ -53,5 +60,21 @@ public sealed class PdfDocumentParser(IPdfPageOcr ocr) : IDocumentParser
         }
         return new ParsedDocument(document.Id, document.KnowledgeBaseId, ParserType,
             pdf.NumberOfPages, units, failures, DateTimeOffset.UtcNow);
+    }
+
+    private static bool HasUsefulExtractedText(string text)
+    {
+        if (!text.Any(char.IsLetterOrDigit)) return false;
+        var cleaned = Regex.Replace(text, @"https?://\S+|www\.\S+", "", RegexOptions.IgnoreCase);
+        cleaned = cleaned.Replace("标准分享吧", "", StringComparison.OrdinalIgnoreCase);
+        var lettersOrDigits = 0;
+        var cjk = 0;
+        foreach (var rune in cleaned.Normalize(NormalizationForm.FormKC).EnumerateRunes())
+        {
+            if (Rune.IsLetterOrDigit(rune)) lettersOrDigits++;
+            if (rune.Value is >= 0x3400 and <= 0x9FFF or >= 0xF900 and <= 0xFAFF or
+                >= 0x20000 and <= 0x2FA1F) cjk++;
+        }
+        return cjk >= 12 || lettersOrDigits >= 80;
     }
 }
