@@ -1,7 +1,8 @@
 param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
-    [string]$OutputRoot = "artifacts/windows"
+    [string]$OutputRoot = "artifacts/windows",
+    [string]$AppVersion = "0.1.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -68,4 +69,21 @@ AI Knowledge Assistant Windows x64 self-contained package
 "@
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $packageDir "*") -DestinationPath $zipPath -Force
+$isccCandidates = @(
+    (Join-Path $repo ".tools/inno/ISCC.exe"),
+    "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+    "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
+) | Where-Object { $_ }
+$iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($iscc) {
+    $installerScript = Join-Path $repo "installer/AIKnowledgeAssistant.iss"
+    & $iscc `
+        "/DSourceDir=$publishDir" `
+        "/DOutputDir=$(Join-Path $repo $OutputRoot)" `
+        "/DAppVersion=$AppVersion" `
+        $installerScript
+    if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE." }
+} else {
+    Write-Warning "Inno Setup compiler was not found; skipped installer EXE generation."
+}
 Write-Output $zipPath
