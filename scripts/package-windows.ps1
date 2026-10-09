@@ -18,7 +18,7 @@ New-Item -ItemType Directory -Force -Path $publishDir,$packageDir | Out-Null
 
 & $dotnet publish (Join-Path $repo "src/AiKnowledgeAssistant.Desktop/AiKnowledgeAssistant.Desktop.csproj") `
     -c $Configuration -r $Runtime --self-contained true `
-    -p:PublishSingleFile=false -p:IncludeNativeLibrariesForSelfExtract=false `
+    -p:PublishSingleFile=false -p:IncludeNativeLibrariesForSelfExtract=false -p:Version=$AppVersion `
     -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 

@@ -5,7 +5,10 @@ namespace AiKnowledgeAssistant.Core.AI;
 public sealed record VerifiedCitation(string SourceId, SourceView Source);
 
 public sealed record CitationVerification(bool IsValid, IReadOnlyList<string> MissingSourceIds,
-    IReadOnlyList<VerifiedCitation> VerifiedCitations);
+    IReadOnlyList<VerifiedCitation> VerifiedCitations)
+{
+    public IReadOnlyList<WebCitation> WebCitations { get; init; } = [];
+}
 
 public interface ICitationVerifier
 {

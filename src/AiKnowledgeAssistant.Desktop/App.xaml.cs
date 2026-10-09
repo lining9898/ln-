@@ -53,7 +53,8 @@ public partial class App : Application
             var deepSeek = new DeepSeekChatProvider(new HttpClient { Timeout = TimeSpan.FromSeconds(45) },
                 credentials, new DeepSeekOptions(credentialTarget));
             var ai = new AiAssistantViewModel(credentials, credentialTarget, deepSeek,
-                new RagAnswerService(new HybridDocumentSearch(fullTextSearch, semanticSearch), deepSeek),
+                new RagAnswerService(new HybridDocumentSearch(fullTextSearch, semanticSearch), deepSeek,
+                    new TavilyWebSearch(new HttpClient { Timeout = TimeSpan.FromSeconds(20) }, credentials)),
                 new CitationVerifier(sourceViewer), () => knowledgeBases.Selected);
             window.DataContext = new MainViewModel(paths, knowledgeBases, documents, search, ai);
             MainWindow = window;

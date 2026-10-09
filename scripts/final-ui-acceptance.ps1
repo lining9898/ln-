@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$AppPath)
+param([Parameter(Mandatory=$true)][string]$AppPath, [switch]$VerifyWebAndPdf, [string]$ScreenshotPath)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
@@ -90,9 +90,57 @@ try {
     }
     if (-not $pageTextMatches) { throw 'Jumped PDF page text does not show expected OCR phrase.' }
     Write-Output 'PASS PDF_PAGE_CONTENT_MATCH_UI'
+    if ($VerifyWebAndPdf) {
+        Invoke-Control $root '查看原始 PDF'
+        $pdfWindow = $null
+        $loaded = $null
+        for ($attempt = 0; $attempt -lt 75; $attempt++) {
+            $windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
+                [System.Windows.Automation.TreeScope]::Children,
+                [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $process.Id))
+            $ownedWindows = $root.FindAll($scope, [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window))
+            foreach ($window in @($windows) + @($ownedWindows)) {
+                if ($window.Current.Name.StartsWith('原始 PDF')) { $pdfWindow = $window; break }
+            }
+            if ($null -ne $pdfWindow) {
+                $loaded = $pdfWindow.FindFirst($scope, [System.Windows.Automation.PropertyCondition]::new(
+                    [System.Windows.Automation.AutomationElement]::NameProperty, 'PDF 物理第 10 页 / 共 58 页 · 原始页面'))
+                if ($null -ne $loaded) { break }
+            }
+            Start-Sleep -Milliseconds 400
+        }
+        if ($null -eq $pdfWindow -or $null -eq $loaded) {
+            Write-Output "PDF_WINDOW_FOUND=$($null -ne $pdfWindow)"
+            if ($null -ne $pdfWindow) {
+                $texts = $pdfWindow.FindAll($scope, [System.Windows.Automation.PropertyCondition]::new(
+                    [System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text))
+                foreach ($text in $texts) { if ($text.Current.Name.StartsWith('PDF ') -or $text.Current.Name.StartsWith('无法') -or $text.Current.Name.StartsWith('正在')) { Write-Output $text.Current.Name } }
+            }
+            throw 'Original PDF page did not render.'
+        }
+        Assert-Control $pdfWindow 'PDF 原始页面图像' 'ORIGINAL_PDF_IMAGE_UI'
+        if ($ScreenshotPath) {
+            Add-Type -AssemblyName System.Drawing
+            $pdfWindow.SetFocus()
+            Start-Sleep -Milliseconds 300
+            $bounds = $pdfWindow.Current.BoundingRectangle
+            $bitmap = [System.Drawing.Bitmap]::new([int]$bounds.Width, [int]$bounds.Height)
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+            try { $graphics.CopyFromScreen([int]$bounds.X, [int]$bounds.Y, 0, 0, $bitmap.Size); $bitmap.Save($ScreenshotPath) }
+            finally { $graphics.Dispose(); $bitmap.Dispose() }
+        }
+        $pdfWindow.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+        Select-Control $root 'AI问答'
+        $toggle = Find-Control $root '联网搜索开关'
+        $toggle.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle()
+        Assert-Control $root '公开搜索词' 'WEB_MODE_UI'
+        $toggle.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle()
+    }
     Select-Control $root '设置'
     Assert-Control $root '本地数据目录' 'DATA_DIRECTORY_UI'
     Assert-Control $root 'DeepSeek API Key 输入框' 'KEY_CONFIGURATION_UI'
+    if ($VerifyWebAndPdf) { Assert-Control $root 'Tavily 搜索 Key' 'SEARCH_KEY_PASSWORD_UI' }
     Invoke-Control $root '保存 Key'
     Assert-Control $root '请输入 DeepSeek API Key。' 'EMPTY_KEY_ERROR_UI'
     $noKey = $root.FindFirst($scope, [System.Windows.Automation.PropertyCondition]::new(

@@ -2,7 +2,7 @@
 
 日期：2026-10-08。平台：Windows 10 x64。分支：`windows-real-validation-batch6`。安装器版本：0.1.1。
 
-交付文件：`artifacts/windows/AIKnowledgeAssistantSetup-win-x64.exe`（SHA-256 `234EF0D795D99A40C4AF0EE61E2175DD962757D9BE2D3A2E7D626A3C6DA30537`）；`artifacts/windows/AIKnowledgeAssistant-win-x64.zip`（SHA-256 `6C55E5F929B36C7FF5DCAE49AEC314A6406B41111D7676A708E30CADC1F0E4E8`）。
+历史交付：0.1.1 安装包与 ZIP 的验收记录如下。当前交付文件已由 0.2.0 替换，新增联网搜索及 PDF 原始页面查看的验收见 `docs/web-pdf-release.md`；当前文件哈希和代码提交见交付目录的 `release-manifest.txt`。
 
 | 项目 | 状态 | 实际证据 |
 | --- | --- | --- |
